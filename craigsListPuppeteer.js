@@ -1,5 +1,7 @@
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
+const ObjectsToCsv = require('objects-to-csv');
+
 
 
 //function for scraping main data(Listings)
@@ -50,13 +52,24 @@ async function sleep(miliseconds) {
     return new Promise(resolve => setTimeout(resolve, miliseconds));
 }
 
+//function to convet array to csv
+async function createCsvFile(data) {
+    const csv = new ObjectsToCsv(data);
+ 
+  // Save to file:
+  await csv.toDisk('./craigList.csv');
+ 
+ 
+}
+
 //instatiate puppeteer and call other functions
 async function main() {
     const browser = await puppeteer.launch({headless: false});
     const page = await browser.newPage();
     const listings = await scrapeListings(page);
     const listingsWithJobDecsriptions = await scrapeJobDescriptions(listings, page);
-    console.log(listings);
+    await createCsvFile(listingsWithJobDecsriptions)
+    //console.log(listingsWithJobDecsriptions);
 }
 
 
