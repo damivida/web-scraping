@@ -57,7 +57,7 @@ async function whatToMine(page) {
 
 //--------------------------------------------MAIN
 const ltcMining = async () => {
-    const browser = await puppeteer.launch({headless:true});
+    const browser = await puppeteer.launch({headless:false});
     const page = await browser.newPage();
 
         //---------------profitability calc

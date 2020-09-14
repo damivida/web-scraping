@@ -16,6 +16,7 @@ async function miningPoolHubETH(page) {
     let hp = parseFloat($('#main > div:nth-child(2) > article:nth-child(1) > div > table > tbody > tr:nth-child(1) > td:nth-child(4)')
         .text()
         .replace(',', '')
+        .replace(',', '')
         .replace(',', ''));
 
     let coinsPerDay = parseFloat($('#main > div:nth-child(2) > article:nth-child(1) > div > table > tbody > tr:nth-child(1) > td:nth-child(5)').text());
@@ -143,7 +144,7 @@ async function f2pool() {
 
 
 const ethMining =  async () => {
-    const browser = await puppeteer.launch({headless:true});
+    const browser = await puppeteer.launch({headless:false});
     const page = await browser.newPage();
 
 
@@ -192,7 +193,7 @@ const ethMining =  async () => {
 
 
 
-//ethMining();
+ethMining();
 module.exports = ethMining;
 
 //f2pool();

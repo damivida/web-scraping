@@ -51,14 +51,13 @@ async function whatToMine(page) {
     let profitability =  profRound(prof);
 
     //console.log({poolName,hp, coinsPerDay, profitability, lastBlockTime});
-    return({poolName, hp, coinsPerDay, profitability, lastBlockTime});
-    
+    return({poolName, hp, coinsPerDay, profitability, lastBlockTime});    
     
 }
 
 
 const etcMining = async () => {
-    const browser = await puppeteer.launch({headless:true});
+    const browser = await puppeteer.launch({headless:false});
     const page = await browser.newPage();
 
         //profitability calc
