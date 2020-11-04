@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
-const ScrapingModel = mongoose.model('ScrapingModel', {
-    minigPool: {
+const MiningProfCrawler = mongoose.model('MiningProfCrawler', {
+    miningPool: {
         type: Object,
         required: true
     },
@@ -10,5 +10,5 @@ const ScrapingModel = mongoose.model('ScrapingModel', {
     }
 })
 
-module.exports = ScrapingModel;
+module.exports = MiningProfCrawler;
 
