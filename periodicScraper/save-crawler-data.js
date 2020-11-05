@@ -3,9 +3,10 @@ const cheerio = require('cheerio');
 require('./db/mongoose');
 const puppeteer = require('puppeteer');
 const profRound = require('./functions/profRound')
+const {coinotronDenom, coinotronDenomHs} = require('./functions/functionsAll')
 
 //const RedditArticle = require('./models/reddit-article');
-const MiningProfCrawler = require('./models/mining-prof');
+const MiningProf = require('./models/mining-prof');
 
 
 async function main() {
@@ -73,7 +74,8 @@ async function miningPoolHubETH(page) {
 
     //console.log({poolName, hp, coinsPerDay, profitability, lastBlockTime});
 
-    return ({ poolName, hp, coinsPerDay, profitability, lastBlockTime, url });
+    const pool = { poolName, hp, coinsPerDay, profitability, lastBlockTime, url };
+    return pool;
   
   } catch (error) {
     
@@ -105,8 +107,8 @@ async function coinotronETH(page) {
    
     let url = 'https://www.coinotron.com/app?action=statistics';
 
-
-    return ({ poolName, hp, coinsPerDay, profitability, lastBlockTime, url });
+    const pool = { poolName, hp, coinsPerDay, profitability, lastBlockTime, url }
+    return pool;
 
   } catch (err) {
     return err;
@@ -135,7 +137,9 @@ async function f2pool(page) {
     const url = 'https://www.f2pool.com/';
 
     //console.log({profWithFee, fee, profitability});
-    return ({ poolName, profWithFee, fee, profitability, url });
+
+    const pool = { poolName, profWithFee, fee, profitability, url }
+    return pool;
 
   } catch (error) {
     
@@ -176,25 +180,53 @@ const scrapingETH = async () => {
 
   //--------------------------------
 
-  let algoCoin = "Dagger-hashimoto ETH"
+  let algoCoin = "ETH"
   const ethMiningPools = {
     algoCoin,
-    miningPoolHubETH: scrapMiningPoolHubETH,
-    coinotronETH: scrapCoinotronETH,
-    f2PoolETH: scrapingF2PoolETH,
+    miningPoolHub: scrapMiningPoolHubETH,
+    coinotron: scrapCoinotronETH,
+    f2Pool: scrapingF2PoolETH,
     avgETHProf: profAvg
   }
   //console.log(ethMining)
 
   //res.send({ ethMiningPools });
   //return ethMining;
+  //const method = "Crawler";
+  let date = new Date();
 
   try{
 
-    let date = new Date();
-    const miningResultETH =  new MiningProfCrawler({miningPool:ethMiningPools, date})
+    const miningPoolHubData =  new MiningProf({
+      method: 'Crawler',
+      coinName: 'ETH',
+      miningPoolName: 'Mining Pool Hub',
+      lastBlockTime: scrapMiningPoolHubETH.lastBlockTime,
+      profitability: profMiningPoolHubETH,
+      date: new Date()
+    });
 
-    miningResultETH.save();
+    const f2PoolData = new MiningProf({
+      method: 'Crawler',
+      coinName: 'ETH',
+      miningPoolName: 'F2pool',
+      profitability: profF2PoolETH,
+      date: new Date()
+    })
+
+    const coinotronData = new MiningProf({
+      method: 'Crawler',
+      coinName: 'ETH',
+      miningPoolName: 'Coinotron',
+      lastBlockTime: scrapCoinotronETH.lastBlockTime,
+      profitability: scrapCoinotronETH.profitability,
+      date: new Date()
+    })
+
+
+    miningPoolHubData.save();
+    f2PoolData.save();
+    coinotronData.save();
     console.log('Scraping ETH results saved');
 
   }catch(e) {
@@ -203,6 +235,139 @@ const scrapingETH = async () => {
 
  
 }
+
+//------------------ ETC
+
+//COINOTRON
+async function coinotronETC(page) {
+  
+  try {
+
+    await page.setDefaultNavigationTimeout(0);
+    await page.goto('https://www.coinotron.com/app?action=statistics');
+    const html = await page.content();
+    const $ = cheerio.load(html);
+
+    const poolName = 'Coinotron - ETC';
+    const lastBlockTime = $('#row0TableSolvedBlocksETC > td:nth-child(2)').text();
+    const hp = parseFloat($('#row0TableBestMinersETC > td:nth-child(3)').text().replace(' GH', ''));
+    let hpDenom = $('#row0TableBestMinersETC > td:nth-child(3)').text();
+    hpDenom = hpDenom.slice((hpDenom.length)-2,hpDenom.length);
+    let coinsPerDay = parseFloat($('#row0TableBestMinersETC > td:nth-child(4)').text());
+    
+
+    let prof = coinotronDenom(hp, hpDenom, coinsPerDay);
+        
+    let profitability = profRound(prof);
+
+    let url = 'https://www.coinotron.com/app?action=statistics';
+
+    return ({ poolName, hp, coinsPerDay, profitability, lastBlockTime, url });
+    
+  } catch (error) {
+    return error;
+  }
+ 
+}
+
+
+//F2POOL
+async function f2poolETC(page) {
+  try {
+
+    await page.setDefaultNavigationTimeout(0);
+    await page.goto('https://www.f2pool.com/');
+    const html = await page.content();
+    const $ = cheerio.load(html);
+
+
+    const poolName = 'F2Pool';
+    const profWithFee = parseFloat($("#tab-content-main > table > tbody > tr:nth-child(12) > td > div > div > div.container-info.col-12.col-lg-6 > div > div.row.info-item.calc-inline.hash-val-container > div > div:nth-child(4) > span.pl-1.profit-val.info-value").text().trim());
+    const fee = parseFloat($("#tab-content-main > table > tbody > tr:nth-child(12) > td > div > div > div.container-info.col-12.col-lg-6 > div > div:nth-child(5) > div.col-12.col-lg-4.item > div.info-value").text().replace('% PPS', ''));
+    const profitability = parseFloat((profWithFee / ((100 - fee) / 100)).toFixed(8));
+    const url = 'https://www.f2pool.com/';
+
+    // console.log({profWithFee, fee, profitability});
+    return ({ poolName, profWithFee, fee, profitability, url });
+
+  } catch (error) {
+    return error;
+  }
+
+}
+
+
+const etcScraping = async () => {
+
+
+  const browser = await puppeteer.launch({ headless: true , args: ["--no-sandbox"] });
+  const page = await browser.newPage();
+
+  //profitability calc
+  let arrProf = [];
+  const getSum = (total, numb) => {
+    return total + numb;
+  }
+
+  let scrapCoinotronETC = await coinotronETC(page);
+  let scrapF2PoolETC = await f2poolETC(page);
+  let profCoinotronETC = scrapCoinotronETC.profitability;
+  let profF2PoolETC = scrapF2PoolETC.profitability;
+
+  arrProf.push(profCoinotronETC, profF2PoolETC)
+
+  //arrProf.reduce(getSum);
+
+  let profAvg = arrProf.reduce(getSum);
+  profAvg = parseFloat((profAvg / arrProf.length).toFixed(8));
+
+  //-------------------
+
+  const etcMiningPools = {
+    coinotronETC: scrapCoinotronETC,
+    f2PoolETC: scrapF2PoolETC,
+    avgETCProf: profAvg
+  }
+  //console.log(etcMining)
+  //res.send({ etcMiningPools });
+
+
+  
+
+  try{
+
+    const f2PoolData = new MiningProf({
+      method: 'Crawler',
+      coinName: 'ETC',
+      miningPoolName: 'F2pool',
+      profitability: profF2PoolETC,
+      date: new Date()
+    })
+
+    const coinotronData = new MiningProf({
+      method: 'Crawler',
+      coinName: 'ETH',
+      miningPoolName: 'Coinotron',
+      lastBlockTime: scrapCoinotronETC.lastBlockTime,
+      profitability: profCoinotronETC,
+      date: new Date()
+    })
+
+
+    f2PoolData.save();
+    coinotronData.save();
+    console.log('Scraping ETC results saved');
+
+  }catch(e) {
+    console.log(e)
+  }
+
+ 
+}
+
+etcScraping();
+
+
 
 scrapingETH();
 
